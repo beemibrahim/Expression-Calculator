@@ -4,4 +4,4 @@
 #include <stdio.h>
 #include <string.h>
 
-char *inputString(FILE *fp, size_t size, int skip_spaces, int *retsize);
+int inputString(FILE *fp, size_t size, int skip_spaces, int *retsize, char** retstring);

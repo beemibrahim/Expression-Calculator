@@ -1,69 +1,77 @@
 #include "expression.h"
 
-struct number *copy_number(struct number *old_number, int* have_encv) {
+struct number* copy_number(struct number* old_number, int* have_encv) {
 
-  /* Create a copy of the current number object */
-  struct number *adding_number = malloc(sizeof(struct number));
-  memset(adding_number, 0, sizeof(struct number));
+	/* Create a copy of the current number object */
 
-  adding_number->malloced_number = malloc(old_number->number_size);
-  memcpy(adding_number->malloced_number, old_number->malloced_number,
-      old_number->number_size);
+	struct number* adding_number = malloc(sizeof(struct number));
+	memset(adding_number, 0, sizeof(struct number));
 
-  adding_number->number_size = old_number->number_size;
-  adding_number->is_negative = old_number->is_negative;
-
-  adding_number->is_decimal = old_number->is_decimal;
+		adding_number->malloced_number = malloc(old_number->number_size);
+		memcpy(adding_number->malloced_number, old_number->malloced_number,
+			old_number->number_size);
+		adding_number->number_size = old_number->number_size;
 
 
-  if (have_encv == NULL) {
+		adding_number->is_negative = old_number->is_negative;
+	
+	adding_number->is_decimal = old_number->is_decimal;
 
-      if (adding_number->is_decimal == 1) {
-          adding_number->decimal_number_size = old_number->decimal_number_size;
-          adding_number->malloced_decimal_number =
-              malloc(old_number->decimal_number_size);
 
-          memcpy(adding_number->malloced_decimal_number,
-              old_number->malloced_decimal_number,
-              old_number->decimal_number_size);
-      }
+	if (have_encv == NULL) {
 
-  }
-  else {
+		if (adding_number->is_decimal == 1) {
+			adding_number->decimal_number_size = old_number->decimal_number_size;
+			adding_number->malloced_decimal_number =
+				malloc(old_number->decimal_number_size);
 
-      if (adding_number->is_decimal == 1 && *have_encv == 1) {
-          adding_number->decimal_number_size = old_number->decimal_number_size;
-          adding_number->malloced_decimal_number =
-              malloc(old_number->decimal_number_size);
+			memcpy(adding_number->malloced_decimal_number,
+				old_number->malloced_decimal_number,
+				old_number->decimal_number_size);
+		}
 
-          memcpy(adding_number->malloced_decimal_number,
-              old_number->malloced_decimal_number,
-              old_number->decimal_number_size);
-      }
-      else {
-          adding_number->is_decimal = 0;
-      }
+	}
+	else {
 
-  }
+		if (adding_number->is_decimal == 1 && *have_encv == 1) {
+			adding_number->decimal_number_size = old_number->decimal_number_size;
+			adding_number->malloced_decimal_number =
+				malloc(old_number->decimal_number_size);
 
-  return adding_number;
+			memcpy(adding_number->malloced_decimal_number,
+				old_number->malloced_decimal_number,
+				old_number->decimal_number_size);
+		}
+		else {
+			adding_number->is_decimal = 0;
+		}
+
+	}
+
+	return adding_number;
 }
 
 void reuse_number(struct number** result)
-{  
-    (*(result))->is_decimal = 0;
-    (*(result))->is_negative = 0;
-    (*(result))->is_number_dig = 0;
-    *(*(result))->malloced_decimal_number = '\0';
-    *(*(result))->malloced_number = '\0';
+{
+	(*(result))->is_decimal = 0;
+	(*(result))->is_negative = 0;
+	(*(result))->is_number_dig = 0;
+	*(*(result))->malloced_decimal_number = '\0';
+	*(*(result))->malloced_number = '\0';
 }
 
-void free_number(struct number *number) {
+void free_number(struct number* number) {
 
-  /* Free */
-  free(number->malloced_decimal_number);
-  free(number->malloced_number);
-  free(number);
+	/* Free */
+	free(number->malloced_decimal_number);
+	free(number->malloced_number);
+	free(number);
 
-  return;
+	return;
+}
+
+void free_last_value_buff(struct last_value_buffer* ptr)
+{
+	free(ptr->buffer);
+	free(ptr);
 }

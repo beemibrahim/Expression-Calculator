@@ -129,12 +129,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="add.c" />
+    <ClCompile Include="divide.c" />
     <ClCompile Include="expression.c" />
     <ClCompile Include="expression_parser.c" />
     <ClCompile Include="main.c" />
+    <ClCompile Include="multiply.c" />
+    <ClCompile Include="subtract.c" />
     <ClCompile Include="utilies.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="calculator_methods.h" />
+    <ClInclude Include="errors.h" />
     <ClInclude Include="expression.h" />
     <ClInclude Include="expression_parser.h" />
     <ClInclude Include="utilites.h" />

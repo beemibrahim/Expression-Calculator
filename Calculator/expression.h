@@ -10,6 +10,27 @@
 
 #define DIVIDE 0xDED
 
+
+#define VALUE_START_MALLOC 100
+#define VALUE_ADD_MALLOC 100
+
+#define DECIMAL_VALUE_START_MALLOC 100
+#define DECIMAL_VALUE_ADD_MALLOC 100
+
+#define ANY_START_MALLOC 100
+#define ANY_ADD_MALLOC 100
+
+#define MAX_NUMBER_SIZE 500
+#define MAX_DEC_NUMBER_SIZE 50
+
+#define EXPRESS_OP_START_SIZE 100
+#define EXPRESS_OP_ADD_SIZE 100
+
+struct off_st {
+    int offset;
+    int value;
+};
+
 /* This structure contains the number implementation, it represents a number */
 struct number {
   char *malloced_number;         /* The malloced number */
@@ -52,8 +73,17 @@ struct expression {
   int any_size;
 };
 
-struct number *copy_number(struct number *, int* );
+
+struct last_value_buffer {
+    struct off_st* buffer;
+    int buffer_size;
+    int buffer_offset;
+};
+
+struct number *copy_number(struct number *, int*);
 
 void reuse_number(struct number**);
 
 void free_number(struct number *);
+
+void free_last_value_buff(struct last_value_buffer*);
