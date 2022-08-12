@@ -1,0 +1,45 @@
+﻿Build started 8/12/2022 12:18:57 PM.
+Logging verbosity is set to: Normal.     1>Project "D:\code\Misseniaclous\Calculator\Project3.vcxproj" on node 2 (Rebuild target(s)).
+     1>_PrepareForClean:
+         Deleting file "x64\Debug\Calculator.tlog\Calculator.lastbuildstate".
+       CoreClean:
+         Deleting file "D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.exe".
+     1>C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(514,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Project3.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+       InitializeBuildStatus:
+         Creating "x64\Debug\Calculator.tlog\unsuccessfulbuild" because "AlwaysCreate" was specified.
+       VcpkgTripletSelection:
+         Using triplet "x64-windows" from "C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\"
+       ClCompile:
+         C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.32.31326\bin\HostX64\x64\CL.exe /c /I"C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\include" /ZI /JMC /nologo /W3 /WX- /diagnostics:column /sdl- /Od /D _DEBUG /D _CONSOLE /D _UNICODE /D UNICODE /Gm- /RTC1 /MDd /GS /fp:precise /Zc:wchar_t /Zc:forScope /Zc:inline /permissive- /Fo"x64\Debug\\" /Fd"x64\Debug\vc143.pdb" /external:W3 /Gd /TC /FC /errorReport:prompt expression.c expression_parser.c main.c utilies.c
+         expression.c
+         expression_parser.c
+         main.c
+         utilies.c
+         Generating Code...
+       Link:
+         C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.32.31326\bin\HostX64\x64\link.exe /ERRORREPORT:PROMPT /OUT:"D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.exe" /INCREMENTAL /ILK:"x64\Debug\Calculator.ilk" /NOLOGO /LIBPATH:"C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\debug\lib" /LIBPATH:"C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\debug\lib\manual-link" kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib "C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\debug\lib\*.lib" /MANIFEST /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /manifest:embed /DEBUG /PDB:"D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.pdb" /SUBSYSTEM:CONSOLE /TLBID:1 /DYNAMICBASE /NXCOMPAT /IMPLIB:"D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.lib" /MACHINE:X64 x64\Debug\expression.obj
+         x64\Debug\expression_parser.obj
+         x64\Debug\main.obj
+         x64\Debug\utilies.obj
+         Project3.vcxproj -> D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.exe
+       AppLocalFromInstalled:
+         pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\Users\Ibrahim\vcpkg\vcpkg\scripts\buildsystems\msbuild\applocal.ps1" "D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.exe" "C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\debug\bin" "x64\Debug\Calculator.tlog\Calculator.write.1u.tlog" "x64\Debug\vcpkg.applocal.log"
+         'pwsh.exe' is not recognized as an internal or external command,
+         operable program or batch file.
+         The command "pwsh.exe -ExecutionPolicy Bypass -noprofile -File "C:\Users\Ibrahim\vcpkg\vcpkg\scripts\buildsystems\msbuild\applocal.ps1" "D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.exe" "C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\debug\bin" "x64\Debug\Calculator.tlog\Calculator.write.1u.tlog" "x64\Debug\vcpkg.applocal.log"" exited with code 9009.
+         "C:\WINDOWS\System32\WindowsPowerShell\v1.0\powershell.exe" -ExecutionPolicy Bypass -noprofile -File "C:\Users\Ibrahim\vcpkg\vcpkg\scripts\buildsystems\msbuild\applocal.ps1" "D:\code\Misseniaclous\Calculator\x64\Debug\Calculator.exe" "C:\Users\Ibrahim\vcpkg\vcpkg\installed\x64-windows\debug\bin" "x64\Debug\Calculator.tlog\Calculator.write.1u.tlog" "x64\Debug\vcpkg.applocal.log"
+       FinalizeBuildStatus:
+         Deleting file "x64\Debug\Calculator.tlog\unsuccessfulbuild".
+         Touching "x64\Debug\Calculator.tlog\Calculator.lastbuildstate".
+     1>Done Building Project "D:\code\Misseniaclous\Calculator\Project3.vcxproj" (Rebuild target(s)).
+
+Build succeeded.
+
+       "D:\code\Misseniaclous\Calculator\Project3.vcxproj" (Rebuild target) (1) ->
+       (PrepareForBuild target) -> 
+         C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Microsoft\VC\v170\Microsoft.CppBuild.targets(514,5): warning MSB8028: The intermediate directory (x64\Debug\) contains files shared from another project (Project3.vcxproj).  This can lead to incorrect clean and rebuild behavior.
+
+    1 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:01.40
