@@ -33,12 +33,23 @@ struct off_st {
 
 /* This structure contains the number implementation, it represents a number */
 struct number {
-  char *malloced_number;         /* The malloced number */
-  unsigned int number_size;      /* The malloced number's size */
+  char *malloced_number_block;         /* The malloced number's block */
+  int malloced_number_start_offst;         /* This is the start of the number inside the block */
+
+  unsigned int number_block_size;      /* The malloced number's size */
+//  unsigned int number_size;       /* The size that the number uses of the block size */
+
   int is_decimal;            /* If the number is a decimal number */
-  int is_number_dig;            /* Does this number have any non-decimal digit*/
-  char *malloced_decimal_number; /* The malloced decimal part of the number */
-  unsigned int decimal_number_size; /* The decimal number size */
+  int is_number_dig;            /* Does this number have any non-decimal digit */
+
+  char *malloced_decimal_number_block; /* The malloced decimal part of the number */
+  int malloced_decimal_number_start_offst;  /* This is the start of the decimal number inside the block */
+
+  unsigned int decimal_number_block_size; /* The decimal number size */
+//  unsigned int decimal_number_size; /* The size that the decimal number uses of the decimal number block size */
+
+  unsigned int last_non_zero_decimal_place_pos; /* the position of the last non-zero decimal number of the decimal number block size */
+
   int is_negative;              /* If the number is a negative number*/
 };
 
@@ -87,3 +98,5 @@ void reuse_number(struct number**);
 void free_number(struct number *);
 
 void free_last_value_buff(struct last_value_buffer*);
+
+int create_number(char* num, int size, struct number* result);

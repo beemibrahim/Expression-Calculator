@@ -75,3 +75,75 @@ void free_last_value_buff(struct last_value_buffer* ptr)
 	free(ptr->buffer);
 	free(ptr);
 }
+
+int create_number(char* num, int size, struct number* result)
+{
+	
+	int FoundNegativeSign = 0;
+	int FoundDecimalSign = 0;
+	int InValue = 1;
+	int InDecimalValue = 0;
+
+	int result_write_pos = 0;
+	int result_dec_write_pos = 0;
+
+	int size_ = 0;
+
+	for (char* loopnum = num; size_ < size; loopnum++,size_++) {
+
+		if (*loopnum == '-') {
+
+			if (FoundNegativeSign == 1) {
+				return 1;
+			}
+
+			FoundNegativeSign = 1;
+			result->is_negative = 1;
+
+			continue;
+		}
+
+		if (*loopnum == '.') {
+
+			if (FoundDecimalSign == 1) {
+				return 1;
+			}
+
+			FoundDecimalSign = 1;
+			result->is_decimal = 1;
+			InValue = 0;
+			InDecimalValue = 1;
+
+
+			continue;
+		}
+
+		if (InValue == 1) {
+
+			if (!isdigit(*loopnum)) {
+				return -1;
+			}
+
+			*(result->malloced_number + result_write_pos) = *loopnum;
+			result_write_pos++;
+
+			continue;
+		}
+
+		else if (InDecimalValue == 1) {
+
+			if (!isdigit(*loopnum)) {
+				return -1;
+			}
+
+			*(result->malloced_decimal_number + result_dec_write_pos) = *loopnum;
+			result_dec_write_pos++;
+
+			continue;
+		}
+
+
+	}
+
+}
+

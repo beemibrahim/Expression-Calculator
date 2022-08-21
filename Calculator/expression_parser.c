@@ -84,9 +84,10 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 	}
 
 	/* Allocating dynamic memory for the number */
-	current_number->malloced_number = (char*)malloc(VALUE_START_MALLOC); /* The raw number we have retreived so far */
+	current_number->malloced_number_block = (char*)malloc(VALUE_START_MALLOC); /* The raw number we have retreived so far */
+	current_number->malloced_number_start_offst = 0;
 
-	if (current_number->malloced_number == NULL) {
+	if (current_number->malloced_number_block == NULL) {
 
 		free(have_encountered_low_pred);
 		free_last_value_buff(last_value_buff);
@@ -96,20 +97,21 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 	}
 
 	/* Allocating dynamic memory for the decimal point number */
-	current_number->malloced_decimal_number = (char*)malloc(DECIMAL_VALUE_START_MALLOC); /* The raw decimal number we have retreived so far */
+	current_number->malloced_decimal_number_block = (char*)malloc(DECIMAL_VALUE_START_MALLOC); /* The raw decimal number we have retreived so far */
+	current_number->malloced_number_start_offst = 0;
 
-	if (current_number->malloced_decimal_number == NULL) {
+	if (current_number->malloced_decimal_number_block == NULL) {
 
 		free(have_encountered_low_pred);
 		free_last_value_buff(last_value_buff);
-		free(current_number->malloced_number);
+		free(current_number->malloced_number_block);
 		free(current_number);
 
 		THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 	}
 
-	*current_number->malloced_number = '\0';
-	*current_number->malloced_decimal_number = '\0';
+	*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '\0';
+	*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) = '\0';
 
 	/* Initalizing the expression object */
 	struct expression* expr = calloc(1, sizeof(struct expression));
@@ -143,8 +145,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 	expr->any_size = ANY_START_MALLOC;
 
 	/* Set the sizes of the numbers */
-	current_number->number_size = VALUE_START_MALLOC;
-	current_number->decimal_number_size = DECIMAL_VALUE_START_MALLOC;
+	current_number->number_block_size = VALUE_START_MALLOC;
+	current_number->decimal_number_block_size = DECIMAL_VALUE_START_MALLOC;
 
 	/* States containing info about if the next value is the first value in a
 	 * preceding open or close bracket */
@@ -278,7 +280,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			if (inValue) {
 
 				/* If the value was - : "-" */
-				if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+				if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 					/* Free malloced memory */
 					free(have_encountered_low_pred);
@@ -290,9 +292,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				}
 
 				/* If the value was 0 */
-				if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-					*current_number->malloced_number = '0';
-					*(current_number->malloced_number + 1) = '\0';
+				if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+					*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+					*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 					current_number->is_number_dig = 0;
 					/* If the current number is "-0" which doesn't make sense
@@ -302,7 +304,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				}
 
 				/* If the value had a decimal point with no decimal numbers after it */
-				if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+				if (current_number->is_decimal == 1 && (*(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0')) {
 					current_number->is_decimal = 0;
 				}
 
@@ -385,8 +387,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				expr->any_write_offset += 1;
 
 				/* If the amount of unused space is over MAX_NUMBER_SIZE */
-				if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+				if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -398,15 +400,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_number = malloced_str;
+					add_number->malloced_number_block = malloced_str;
 
-
-					add_number->number_size = write_pos + 1;
+					add_number->number_block_size = write_pos + 1;
 				}
 
 				/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-				if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+				if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -418,9 +419,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_decimal_number = malloced_str;
+					add_number->malloced_decimal_number_block = malloced_str;
 
-					add_number->decimal_number_size = write_dec_pos + 1;
+					add_number->decimal_number_block_size = write_dec_pos + 1;
 				}
 
 				/* Reset number write offsets */
@@ -821,13 +822,13 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 					is_curr_exis_dec_num = 1;
 
-					if (write_dec_pos == current_number->decimal_number_size - 1) {
+					if (write_dec_pos == current_number->decimal_number_block_size - 1) {
 
 						// Incresing the numbers value
-						current_number->decimal_number_size += DECIMAL_VALUE_ADD_MALLOC;
+						current_number->decimal_number_block_size += DECIMAL_VALUE_ADD_MALLOC;
 
 						// Reallocating and Reinitalizing the new memory
-						char* malloced_str = (char*)realloc(current_number->malloced_decimal_number, current_number->decimal_number_size); // The raw number we have retreived so far
+						char* malloced_str = (char*)realloc(current_number->malloced_decimal_number_block, current_number->decimal_number_block_size); // The raw number we have retreived so far
 
 						if (malloced_str == NULL) {
 
@@ -839,26 +840,26 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 							THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 						}
 
-						current_number->malloced_decimal_number = malloced_str;
+						current_number->malloced_decimal_number_block = malloced_str;
 
-						memset(current_number->malloced_decimal_number + (current_number->decimal_number_size - DECIMAL_VALUE_ADD_MALLOC), 0, DECIMAL_VALUE_ADD_MALLOC * sizeof(char));
+						memset(current_number->malloced_decimal_number_block + (current_number->decimal_number_block_size - DECIMAL_VALUE_ADD_MALLOC), 0, DECIMAL_VALUE_ADD_MALLOC * sizeof(char));
 					}
 
-					*(current_number->malloced_decimal_number + write_dec_pos) = *expression;
+					*((current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) + write_dec_pos) = *expression;
 					write_dec_pos += 1;
-					*(current_number->malloced_decimal_number + write_dec_pos) = '\0';
+					*((current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) + write_dec_pos) = '\0';
 
 				}
 				else {
 
 
-					if (write_pos == current_number->number_size - 1) {
+					if (write_pos == current_number->number_block_size - 1) {
 
 						// Incresing the numbers value
-						current_number->number_size += VALUE_ADD_MALLOC;
+						current_number->number_block_size += VALUE_ADD_MALLOC;
 
 						// Reallocating and Reinitalizing the new memory
-						char* malloced_str = (char*)realloc(current_number->malloced_number, current_number->number_size); // The raw number we have retreived so far
+						char* malloced_str = (char*)realloc(current_number->malloced_number_block, current_number->number_block_size); // The raw number we have retreived so far
 
 						if (malloced_str == NULL) {
 
@@ -870,24 +871,24 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 							THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 						}
 
-						current_number->malloced_number = malloced_str;
+						current_number->malloced_number_block = malloced_str;
 
 
-						memset(current_number->malloced_number + (current_number->number_size - VALUE_ADD_MALLOC), 0, VALUE_ADD_MALLOC * sizeof(char));
+						memset(current_number->malloced_number_block + (current_number->number_block_size - VALUE_ADD_MALLOC), 0, VALUE_ADD_MALLOC * sizeof(char));
 					}
 
 					if (inValueEncounteredNonZero == 1) {
 
-						*(current_number->malloced_number + write_pos) = *expression;
+						*((current_number->malloced_number_block + current_number->malloced_number_start_offst) + write_pos) = *expression;
 						write_pos += 1;
-						*(current_number->malloced_number + write_pos) = '\0';
+						*((current_number->malloced_number_block + current_number->malloced_number_start_offst) + write_pos) = '\0';
 
 					}
 					else if (inValueEncounteredNonZero == 0 && *expression != '0') {
 
-						*(current_number->malloced_number + write_pos) = *expression;
+						*((current_number->malloced_number_block + current_number->malloced_number_start_offst) + write_pos) = *expression;
 						write_pos += 1;
-						*(current_number->malloced_number + write_pos) = '\0';
+						*((current_number->malloced_number_block + current_number->malloced_number_start_offst) + write_pos) = '\0';
 
 					}
 
@@ -939,7 +940,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 
 			/* If the value was - : "-" */
-			if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+			if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 				/* Free malloced memory */
 				free(have_encountered_low_pred);
@@ -951,9 +952,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value was 0 */
-			if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-				*current_number->malloced_number = '0';
-				*(current_number->malloced_number + 1) = '\0';
+			if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 				current_number->is_number_dig = 0;
 				/* If the current number is "-0" which doesn't make sense
@@ -963,7 +964,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value had a decimal point with no decimal numbers after it */
-			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0')) {
 				current_number->is_decimal = 0;
 			}
 
@@ -1058,8 +1059,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				expr->any_write_offset += 1;
 
 				/* If the amount of unused space is over MAX_NUMBER_SIZE */
-				if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+				if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1071,14 +1072,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_number = malloced_str;
+					add_number->malloced_number_block = malloced_str;
 
-					add_number->number_size = write_pos + 1;
+					add_number->number_block_size = write_pos + 1;
 				}
 
 				/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-				if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+				if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1090,9 +1091,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_decimal_number = malloced_str;
+					add_number->malloced_decimal_number_block = malloced_str;
 
-					add_number->decimal_number_size = write_dec_pos + 1;
+					add_number->decimal_number_block_size = write_dec_pos + 1;
 				}
 
 				/* Reset number write offsets */
@@ -1110,7 +1111,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 
 			/* If the value was - : "-" */
-			if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+			if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 				/* Free malloced memory */
 				free(have_encountered_low_pred);
@@ -1122,9 +1123,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value was 0 */
-			if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-				*current_number->malloced_number = '0';
-				*(current_number->malloced_number + 1) = '\0';
+			if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 				current_number->is_number_dig = 0;
 				/* If the current number is "-0" which doesn't make sense
@@ -1134,7 +1135,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value had a decimal point with no decimal numbers after it */
-			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0')) {
 				current_number->is_decimal = 0;
 			}
 
@@ -1267,8 +1268,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				expr->any_write_offset += 1;
 
 				/* If the amount of unused space is over MAX_NUMBER_SIZE */
-				if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+				if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1280,14 +1281,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_number = malloced_str;
+					add_number->malloced_number_block = malloced_str;
 
-					add_number->number_size = write_pos + 1;
+					add_number->number_block_size = write_pos + 1;
 				}
 
 				/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-				if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+				if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1299,9 +1300,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_decimal_number = malloced_str;
+					add_number->malloced_decimal_number_block = malloced_str;
 
-					add_number->decimal_number_size = write_dec_pos + 1;
+					add_number->decimal_number_block_size = write_dec_pos + 1;
 				}
 
 				/* Reset number write offsets */
@@ -1341,7 +1342,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 			
 			/* If the value was - : "-" */
-			if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+			if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 				/* Free malloced memory */
 				free(have_encountered_low_pred);
@@ -1353,9 +1354,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value was 0 */
-			if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-				*current_number->malloced_number = '0';
-				*(current_number->malloced_number + 1) = '\0';
+			if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 				current_number->is_number_dig = 0;
 				/* If the current number is "-0" which doesn't make sense
@@ -1365,7 +1366,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value had a decimal point with no decimal numbers after it */
-			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0')) {
 				current_number->is_decimal = 0;
 			}
 
@@ -1499,8 +1500,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 
 				/* If the amount of unused space is over MAX_NUMBER_SIZE */
-				if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+				if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1512,14 +1513,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_number = malloced_str;
+					add_number->malloced_number_block = malloced_str;
 
-					add_number->number_size = write_pos + 1;
+					add_number->number_block_size = write_pos + 1;
 				}
 
 				/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-				if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+				if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1531,9 +1532,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_decimal_number = malloced_str;
+					add_number->malloced_decimal_number_block = malloced_str;
 
-					add_number->decimal_number_size = write_dec_pos + 1;
+					add_number->decimal_number_block_size = write_dec_pos + 1;
 				}
 
 				/* Reset number write offsets */
@@ -1573,7 +1574,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 
 			/* If the value was - : "-" */
-			if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+			if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 				/* Free malloced memory */
 				free(have_encountered_low_pred);
@@ -1585,9 +1586,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value was 0 */
-			if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-				*current_number->malloced_number = '0';
-				*(current_number->malloced_number + 1) = '\0';
+			if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 				current_number->is_number_dig = 0;
 				/* If the current number is "-0" which doesn't make sense
@@ -1597,7 +1598,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value had a decimal point with no decimal numbers after it */
-			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0')) {
 				current_number->is_decimal = 0;
 			}
 
@@ -1731,8 +1732,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				expr->any_write_offset += 1;
 
 				/* If the amount of unused space is over MAX_NUMBER_SIZE */
-				if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+				if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1744,14 +1745,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_number = malloced_str;
+					add_number->malloced_number_block = malloced_str;
 
-					add_number->number_size = write_pos + 1;
+					add_number->number_block_size = write_pos + 1;
 				}
 
 				/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-				if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+				if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1763,9 +1764,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_decimal_number = malloced_str;
+					add_number->malloced_decimal_number_block = malloced_str;
 
-					add_number->decimal_number_size = write_dec_pos + 1;
+					add_number->decimal_number_block_size = write_dec_pos + 1;
 				}
 
 				/* Reset number write offsets */
@@ -1804,7 +1805,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 
 
 			/* If the value was - : "-" */
-			if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+			if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 				/* Free malloced memory */
 				free(have_encountered_low_pred);
@@ -1816,9 +1817,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value was 0 */
-			if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-				*current_number->malloced_number = '0';
-				*(current_number->malloced_number + 1) = '\0';
+			if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+				*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 				current_number->is_number_dig = 0;
 				/* If the current number is "-0" which doesn't make sense
@@ -1828,7 +1829,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 			}
 
 			/* If the value had a decimal point with no decimal numbers after it */
-			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+			if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0')) {
 				current_number->is_decimal = 0;
 			}
 
@@ -1963,8 +1964,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				expr->any_write_offset += 1;
 
 				/* If the amount of unused space is over MAX_NUMBER_SIZE */
-				if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+				if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1976,14 +1977,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_number = malloced_str;
+					add_number->malloced_number_block = malloced_str;
 
-					add_number->number_size = write_pos + 1;
+					add_number->number_block_size = write_pos + 1;
 				}
 
 				/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-				if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-					char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+				if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+					char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 					if (malloced_str == NULL) {
 
@@ -1995,9 +1996,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					add_number->malloced_decimal_number = malloced_str;
+					add_number->malloced_decimal_number_block = malloced_str;
 
-					add_number->decimal_number_size = write_dec_pos + 1;
+					add_number->decimal_number_block_size = write_dec_pos + 1;
 				}
 
 				/* Reset number write offsets */
@@ -2094,13 +2095,13 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				InValueEncounteredDigit = 1;
 
 				/* Add a character to the number */
-				if (write_pos == current_number->number_size - 1) {
+				if (write_pos == current_number->number_block_size - 1) {
 
 					// Incresing the numbers value
-					current_number->number_size += VALUE_ADD_MALLOC;
+					current_number->number_block_size += VALUE_ADD_MALLOC;
 
 					// Reallocating and Reinitalizing the new memory
-					char* malloced_str = (char*)realloc(current_number->malloced_number, current_number->number_size); // The raw number we have retreived so far
+					char* malloced_str = (char*)realloc(current_number->malloced_number_block, current_number->number_block_size); // The raw number we have retreived so far
 
 					if (malloced_str == NULL) {
 
@@ -2112,24 +2113,24 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 						THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 					}
 
-					current_number->malloced_number = malloced_str;
+					current_number->malloced_number_block = malloced_str;
 
-					memset(current_number->malloced_number + (current_number->number_size - VALUE_ADD_MALLOC), 0, VALUE_ADD_MALLOC * sizeof(char));
+					memset(current_number->malloced_number_block + (current_number->number_block_size - VALUE_ADD_MALLOC), 0, VALUE_ADD_MALLOC * sizeof(char));
 				}
 
 
 				if (inValueEncounteredNonZero == 1) {
 
-					*(current_number->malloced_number + write_pos) = *expression;
+					*(current_number->malloced_number_block + current_number->malloced_number_start_offst + write_pos) = *expression;
 					write_pos += 1;
-					*(current_number->malloced_number + write_pos) = '\0';
+					*(current_number->malloced_number_block + current_number->malloced_number_start_offst + write_pos) = '\0';
 
 				}
 				else if (inValueEncounteredNonZero == 0 && *expression != '0') {
 
-					*(current_number->malloced_number + write_pos) = *expression;
+					*(current_number->malloced_number_block + current_number->malloced_number_start_offst + write_pos) = *expression;
 					write_pos += 1;
-					*(current_number->malloced_number + write_pos) = '\0';
+					*(current_number->malloced_number_block + current_number->malloced_number_start_offst + write_pos) = '\0';
 
 				}
 
@@ -2183,7 +2184,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 	if (inValue) {
 
 		/* If the value was - : "-" */
-		if (inValueEncounteredZero == 0 && *current_number->malloced_decimal_number == '\0' && *current_number->malloced_number == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
+		if (inValueEncounteredZero == 0 && *(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0' && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0' && current_number->is_negative == 1 && current_number->is_decimal == 0) {
 
 			/* Free malloced memory */
 			free(have_encountered_low_pred);
@@ -2195,9 +2196,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 		}
 
 		/* If the value was 0 */
-		if (inValueEncounteredNonZero == 0 && *current_number->malloced_number == '\0') {
-			*current_number->malloced_number = '0';
-			*(current_number->malloced_number + 1) = '\0';
+		if (inValueEncounteredNonZero == 0 && *(current_number->malloced_number_block + current_number->malloced_number_start_offst) == '\0') {
+			*(current_number->malloced_number_block + current_number->malloced_number_start_offst) = '0';
+			*(current_number->malloced_number_block + current_number->malloced_number_start_offst + 1) = '\0';
 
 			current_number->is_number_dig = 0;
 			/* If the current number is "-0" which doesn't make sense
@@ -2207,7 +2208,7 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 		}
 
 		/* If the value had a decimal point with no decimal numbers after it */
-		if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number) == '\0')) {
+		if (current_number->is_decimal == 1 && (*(current_number->malloced_decimal_number_block + current_number->malloced_decimal_number_start_offst) == '\0')) {
 			current_number->is_decimal = 0;
 		}
 
@@ -2293,8 +2294,8 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 		expr->any_write_offset += 1;
 
 		/* If the amount of unused space is over MAX_NUMBER_SIZE */
-		if ((add_number->number_size - write_pos) > MAX_NUMBER_SIZE) {
-			char* malloced_str = realloc(add_number->malloced_number, write_pos + 1);
+		if ((add_number->number_block_size - write_pos) > MAX_NUMBER_SIZE) {
+			char* malloced_str = realloc(add_number->malloced_number_block, write_pos + 1);
 
 
 			if (malloced_str == NULL) {
@@ -2307,14 +2308,14 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 			}
 
-			add_number->malloced_number = malloced_str;
+			add_number->malloced_number_block = malloced_str;
 
-			add_number->number_size = write_pos + 1;
+			add_number->number_block_size = write_pos + 1;
 		}
 
 		/* If the amount of unused space is over MAX_DEC_NUMBER_SIZE */
-		if ((add_number->decimal_number_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
-			char* malloced_str = realloc(add_number->malloced_decimal_number, write_dec_pos + 1);
+		if ((add_number->decimal_number_block_size - write_dec_pos) > MAX_DEC_NUMBER_SIZE) {
+			char* malloced_str = realloc(add_number->malloced_decimal_number_block, write_dec_pos + 1);
 
 			if (malloced_str == NULL) {
 
@@ -2326,9 +2327,9 @@ int ParseExpression(char* expression, int expression_size, struct expression* re
 				THROW_PARSE_ERROR_(OUT_OF_HEAP_P)
 			}
 
-			add_number->malloced_decimal_number = malloced_str;
+			add_number->malloced_decimal_number_block = malloced_str;
 
-			add_number->decimal_number_size = write_dec_pos + 1;
+			add_number->decimal_number_block_size = write_dec_pos + 1;
 		}
 
 		/* Reset number write offsets */
